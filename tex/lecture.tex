@@ -102,9 +102,20 @@
 \begin{frame}{Disclaimer}
 \begin{enumerate}
 \item This will be a fire hose talk
-\item Despite this, we are only going to scratch the surface
+\item We are only going to scratch the surface
 \end{enumerate}
 \includegraphics[width=\linewidth]{firehose.png}
+\end{frame}
+
+\begin{frame}{Motivating example}
+\begin{itemize}
+\item Hashing a vector of strings
+\item String comes in
+\item Magic happens
+\item 64 bit unsigned integer comes out
+\item Let's take a look at the serial code...
+\item This seems easy to parallelize. What could go wrong?
+\end{itemize}
 \end{frame}
 
 \begin{frame}{Multithreading}
@@ -117,7 +128,9 @@
 \end{frame}
 
 \begin{frame}{Multithreading}
-\includegraphics[width=\linewidth]{concurrency.jpeg}
+\begin{center}
+\includegraphics[width=0.8\linewidth]{concurrency.jpeg}
+\end{center}
 \end{frame}
 
 \begin{frame}{Task Queue}
@@ -129,6 +142,7 @@
 \item[>] push(f, args...)
 \item[>] complete()
 \end{itemize}
+\item Use futures to query the completion of individual tasks (outside the scope of this talk)
 \item Performance!
 \item Let's take a look at Sean Parent's talk for some inspiration...
 \end{itemize}
@@ -144,6 +158,62 @@ The features...
 \item Syntax: \texttt{template < typename ...T >}
 \item The above can be instantiated with any number of types (including zero)
 \item \texttt{T} is a parameter pack and must be expanded whenever used
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Perfect forwarding}
+\begin{itemize}
+\item When writing a function taking arguments by lvalue or rvalue reference, you need to write 2 functions
+\item When writing a function \textit{template} taking arguments by reference, we can avoid this by using perfect forwarding
+\item Universal reference: \texttt{T\&\&}, where \texttt{T} is a function parameter
+\item Use \texttt{std::forward} to pass as lvalue (do nothing) or rvalue (move)
+\end{itemize}
+\texttt{template < typename T >}\\
+\texttt{void fun(T\&\& a) \{}\\
+\hspace{0.5cm}\texttt{bar(std::forward<T>(a));}\\
+\texttt{\}}
+\end{frame}
+
+\begin{frame}{\texttt{std::function}}
+\begin{itemize}
+\item Type-erased function wrapper
+\item Template syntax: \texttt{std::function<R(Args...)>}
+\item Wraps arbitrary function object which takes arguments of types \texttt{Args...} and returns \texttt{R}
+\item API: docs
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Atomic operations}
+\begin{itemize}
+\item Special \textit{hardware} instructions
+\item Guarantee no intermediate state is visible
+\item Details are very complicated (google memory order if you're curious)
+\item Simplified, high-level view: an atomic type is magically thread safe
+\item STL: for integral types, \texttt{std::atomic<T>} behaves like \texttt{T}, but can be modified simultaneously by different threads (this is all we need to know to understand the accompanying demo)
+\end{itemize}
+\end{frame}
+
+\begin{frame}{\texttt{std::condition\_variable}}
+\begin{itemize}
+\item Synchronization primitive which allows a thread to sleep until a condition is satisfied
+\item Sleeping threads don't take up CPU time
+\item \texttt{wait} to go to sleep
+\item \texttt{notify\_one} or \texttt{notify\_all} to wake up threads waiting on a condition variable
+\item API: docs
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Summary}
+\begin{itemize}
+\item Multithreading is \underline{hard}
+\item Don't assume anything about performance that you haven't measured
+\item Use a high-level soluton/library whenever possible
+\end{itemize}
+\vfill
+\begin{itemize}
+\item Generic programming is a great tool, which yields powerful abstractions
+\item Before you hand-roll something, check the STL
+\item C++ is old, but it's evolving rapidly
 \end{itemize}
 \end{frame}
 
