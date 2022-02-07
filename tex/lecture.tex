@@ -69,8 +69,8 @@
 }
 
 \title{Introduction to concurrency in modern C++}
-
-\date{\vspace{5pt}\formatdate{13}{1}{2021}}
+\date{\vspace{5pt}\formatdate{24}{1}{2022}}
+\author{Jakub Gałecki}
 
 %===================================================================================%
 %				THEME COLORS
@@ -139,9 +139,10 @@
 \item Task queue stores tasks and executes them in FIFO order on a thread pool
 \item API:
 \begin{itemize}
-\item[>] push(f, args...)
-\item[>] complete()
+\item push(f, args...)
+\item complete()
 \end{itemize}
+\item Assume single producer for simplicity
 \item Use futures to query the completion of individual tasks (outside the scope of this talk)
 \item Performance!
 \item Let's take a look at Sean Parent's talk for some inspiration...
@@ -205,20 +206,28 @@ The features...
 
 \begin{frame}{Summary}
 \begin{itemize}
+\setlength\itemsep{.5em}
 \item Multithreading is \underline{hard}
-\item Don't assume anything about performance that you haven't measured
-\item Use a high-level soluton/library whenever possible
-\end{itemize}
-\vfill
-\begin{itemize}
+\item Manually managing threads is usually a bad idea
+\item The STL has some great concurrency primitives: mutex, atomic, condition variable, semaphore, barrier...
 \item Generic programming is a great tool, which yields powerful abstractions
-\item Before you hand-roll something, check the STL
-\item C++ is old, but it's evolving rapidly
+\item Balance your load
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Key takeaways}
+\Large
+\begin{itemize}
+\setlength\itemsep{1em}
+\item[\rightarrow] Don't assume anything about performance that you haven't measured
+\item[\rightarrow] Rely on trusted libraries
+\item[\rightarrow] C++ is old, but it's evolving rapidly, and you just can't beat the performance!
 \end{itemize}
 \end{frame}
 
 \appendix
 \begin{frame}{Q\&A}
-    \alert{Thanks for listening}
+\LARGE
+Thanks for listening
 \end{frame}
 \end{document}
