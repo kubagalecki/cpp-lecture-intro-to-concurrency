@@ -33,6 +33,7 @@
 \usepackage{graphicx}
 %\usepackage{datatool}
 %\usepackage{animate}
+\graphicspath{{../figs/}}
 
 % For someone using the pgfplot tools
 %\usepackage{pgfplots}
@@ -43,6 +44,7 @@
 %Remove words break, wrap instead
 \usepackage[none]{hyphenat}
 
+\usepackage{minted}
 
 %for custom date
 \usepackage[english]{babel}
@@ -100,11 +102,72 @@
 \end{textblock*}}
 
 \begin{frame}{Disclaimer}
-\begin{enumerate}
-\item This will be a fire hose talk
-\item We are only going to scratch the surface
-\end{enumerate}
-\includegraphics[width=\linewidth]{firehose.png}
+This will be a firehose talk.
+It's meant to serve as a broad overview, not an exhaustive reference.
+\begin{center}
+\vspace{.1cm}
+\includegraphics[width=\linewidth]{firehose.jpg}
+\end{center}
+\end{frame}
+
+\begin{frame}{One CPU, many cores}
+\begin{center}
+\includegraphics[width=\linewidth]{cpu_die.jpg}
+\end{center}
+\end{frame}
+
+\begin{frame}{Process vs. thread}
+\begin{center}
+\includegraphics[width=.65\linewidth]{proc_thread.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Process vs. thread}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\textbf{Process} \\
+\begin{itemize}
+\item Has its own address space
+\item Walled off from other processes
+\item consists of at least one thread
+\item When you launch an application, you launch a process (and its main thread)
+\end{itemize}
+\end{column}
+\begin{column}{0.5\textwidth}
+\textbf{Thread} \\
+\begin{itemize}
+\item Smallest unit of execution, single stream of instructions
+\item Belongs to a process
+\item \textbf{Shares the address space of the process with other threads}
+\end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Example}
+\tiny
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\inputminted{cpp}{../code/examples/example01a.cpp}
+
+\vspace{.25cm}
+\hrulefill
+
+\texttt{Hello from thread 2}
+
+\texttt{Hello from thread 1}
+\end{column}
+\begin{column}{0.5\textwidth}
+\inputminted{cpp}{../code/examples/example01b.cpp}
+
+\vspace{.25cm}
+\hrulefill
+
+\texttt{139765188224576}
+
+\texttt{139765179831872}
+\end{column}
+\end{columns}
 \end{frame}
 
 \begin{frame}{Motivating example}

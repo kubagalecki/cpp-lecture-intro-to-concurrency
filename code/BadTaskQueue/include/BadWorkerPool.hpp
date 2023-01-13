@@ -11,7 +11,7 @@ class BadWorkerPool
 public:
     BadWorkerPool() { launched_threads.reserve(std::thread::hardware_concurrency()); }
     template < typename F, typename... Args >
-    void push(F&& fun, Args&&... args)
+    void submitForExecution(F&& fun, Args&&... args)
     {
         launched_threads.emplace_back(std::forward< F >(fun), std::forward< Args >(args)...);
     }
@@ -33,19 +33,19 @@ void badLaunchParallelTransformOnPool(IterIn in_begin, IterIn in_end, IterOut ou
         std::transform(chunk_begin, chunk_end, out_it, transform_fun);
     };
 
-    BadWorkerPool ba;
+    BadWorkerPool pool;
 
     for (size_t i = 0; i < pool_size - 1; ++i)
     {
         const auto current_chunk_size = chunk_size + static_cast< size_t >(i < remainder);
-        ba.push(process_chunk, in_begin, in_begin + current_chunk_size, out_begin);
+        pool.submitForExecution(process_chunk, in_begin, in_begin + current_chunk_size, out_begin);
         in_begin += current_chunk_size;
         out_begin += current_chunk_size;
     }
     const auto current_chunk_size = chunk_size + static_cast< size_t >(pool_size - 1 < remainder);
     process_chunk(in_begin, in_begin + current_chunk_size, out_begin);
 
-    ba.complete();
+    pool.complete();
 }
 
 #endif // TASK_QUEUE_LECTURE_BADWORKERPOOL_HPP
