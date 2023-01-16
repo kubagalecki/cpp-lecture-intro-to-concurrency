@@ -38,19 +38,15 @@ void setCounter(benchmark::State& state)
 
 static void Baseline(benchmark::State& state)
 {
-    auto init             = prepInputOutput(state);
-    auto& [input, output] = init;
+    auto [input, output] = prepInputOutput(state);
     for (auto _ : state)
-    {
         std::transform(input.cbegin(), input.cend(), output.begin(), std::hash< std::string >{});
-    }
     setCounter(state);
 }
 
 static void BM_BadAsync(benchmark::State& state)
 {
-    auto init             = prepInputOutput(state);
-    auto& [input, output] = init;
+    auto [input, output] = prepInputOutput(state);
     BadWorkerPool ba;
     for (auto _ : state)
     {
@@ -63,12 +59,9 @@ static void BM_BadAsync(benchmark::State& state)
 
 static void BM_BadAsyncTransform(benchmark::State& state)
 {
-    auto init             = prepInputOutput(state);
-    auto& [input, output] = init;
+    auto [input, output] = prepInputOutput(state);
     for (auto _ : state)
-    {
         badLaunchParallelTransformOnPool(input.cbegin(), input.cend(), output.begin(), std::hash< std::string >{});
-    }
     setCounter(state);
 }
 
@@ -118,24 +111,21 @@ static void BM_BadAsyncTransformOnQueueChunked(benchmark::State& state)
 
 static void BM_STLTransform(benchmark::State& state)
 {
-    auto init             = prepInputOutput(state);
-    auto& [input, output] = init;
+    auto [input, output] = prepInputOutput(state);
     for (auto _ : state)
-    {
         std::transform(
             std::execution::par_unseq, input.cbegin(), input.cend(), output.begin(), std::hash< std::string >{});
-    }
     setCounter(state);
 }
 
 #define COMMON_BM_PARAMS RangeMultiplier(2)->Ranges(param_range)->Unit(benchmark::kMillisecond)->UseRealTime()
 
-static const std::vector< std::pair< std::int64_t, std::int64_t > > param_range = {{1 << 7, 1 << 12},
-                                                                                   {1 << 7, 1 << 12}};
+static const std::vector< std::pair< std::int64_t, std::int64_t > > param_range = {{1 << 12, 1 << 12},
+                                                                                   {1 << 10, 1 << 10}};
 BENCHMARK(Baseline)->Name("Serial")->COMMON_BM_PARAMS;
 BENCHMARK(BM_BadAsync)->Name("New_thread_per_string")->COMMON_BM_PARAMS;
-BENCHMARK(BM_BadAsyncTransformOnQueue)->Name("New_task_per_string")->COMMON_BM_PARAMS;
-BENCHMARK(BM_BadAsyncTransform)->Name("New_thread_per_chunk")->COMMON_BM_PARAMS;
-BENCHMARK(BM_BadAsyncTransformOnQueueChunked)->Name("New_task_per_chunk")->COMMON_BM_PARAMS;
-BENCHMARK(BM_STLTransform)->Name("STL_parallel_transform")->COMMON_BM_PARAMS;
+// BENCHMARK(BM_BadAsyncTransformOnQueue)->Name("New_task_per_string")->COMMON_BM_PARAMS;
+// BENCHMARK(BM_BadAsyncTransform)->Name("New_thread_per_chunk")->COMMON_BM_PARAMS;
+// BENCHMARK(BM_BadAsyncTransformOnQueueChunked)->Name("New_task_per_chunk")->COMMON_BM_PARAMS;
+// BENCHMARK(BM_STLTransform)->Name("STL_parallel_transform")->COMMON_BM_PARAMS;
 BENCHMARK_MAIN();

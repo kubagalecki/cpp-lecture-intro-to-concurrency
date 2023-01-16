@@ -3,7 +3,8 @@
 
 int main() {
   const auto id = [](int i) {
-    std::cout << i << '\n';
+    std::cout << "Hello from thread "
+              << i << '\n';
   };
   std::thread t1{id, 1};
   std::thread t2{id, 2};

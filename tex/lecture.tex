@@ -19,9 +19,9 @@
 \usepackage{mathrsfs}
 
 
-%For making diagram and drawing
-% \usepackage{tikz}
-% \usetikzlibrary{shapes,arrows, fit, positioning}
+%For making diagrams and drawing
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows, fit, positioning}
 
 %For appendix
 \usepackage{appendixnumberbeamer}
@@ -71,7 +71,7 @@
 }
 
 \title{Introduction to concurrency in modern C++}
-\date{\vspace{5pt}\formatdate{24}{1}{2022}}
+\date{\vspace{5pt}\formatdate{16}{1}{2023}}
 \author{Jakub Gałecki}
 
 %===================================================================================%
@@ -110,7 +110,11 @@ It's meant to serve as a broad overview, not an exhaustive reference.
 \end{center}
 \end{frame}
 
-\begin{frame}{One CPU, many cores}
+\begin{frame}[standout]
+Introduction
+\end{frame}
+
+\begin{frame}{One CPU, multiple cores}
 \begin{center}
 \includegraphics[width=\linewidth]{cpu_die.jpg}
 \end{center}
@@ -136,12 +140,16 @@ It's meant to serve as a broad overview, not an exhaustive reference.
 \begin{column}{0.5\textwidth}
 \textbf{Thread} \\
 \begin{itemize}
-\item Smallest unit of execution, single stream of instructions
+\item Smallest logical unit of execution, single stream of instructions
 \item Belongs to a process
+\item Stateful
 \item \textbf{Shares the address space of the process with other threads}
 \end{itemize}
 \end{column}
 \end{columns}
+
+\vspace{.3cm}
+The OS is aware of and manages both processes and threads
 \end{frame}
 
 \begin{frame}{Example}
@@ -153,9 +161,21 @@ It's meant to serve as a broad overview, not an exhaustive reference.
 \vspace{.25cm}
 \hrulefill
 
+\texttt{Hello from thread 1}
+
+\texttt{Hello from thread 2}
+
+\vspace{.25cm}
+\hrulefill
+
 \texttt{Hello from thread 2}
 
 \texttt{Hello from thread 1}
+
+\vspace{.25cm}
+\hrulefill
+
+\texttt{Hello from thread Hello from thread 12}
 \end{column}
 \begin{column}{0.5\textwidth}
 \inputminted{cpp}{../code/examples/example01b.cpp}
@@ -170,101 +190,256 @@ It's meant to serve as a broad overview, not an exhaustive reference.
 \end{columns}
 \end{frame}
 
-\begin{frame}{Motivating example}
+\begin{frame}{Example}
+\scriptsize
+\inputminted{cpp}{../code/examples/example02.cpp}
+
+\vspace{.25cm}
+\hrulefill
+
+\texttt{1004817}
+\end{frame}
+
+\begin{frame}{Races}
+\metroset{block=fill}
+\begin{block}{Data race}
+A data race (race condition) occurs iff multiple threads access an object and at least one of them modifies it
+\end{block}
+
+Thread synchronization is critical
+
+We need to structure our multithreaded programs to
 \begin{itemize}
-\item Hashing a vector of strings
-\item String comes in
-\item Magic happens
-\item 64 bit unsigned integer comes out
-\item Let's take a look at the serial code...
-\item This seems easy to parallelize. What could go wrong?
+\item \textbf{avoid data races}
+\item ensure correctness
+\item have good performance
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Multithreading}
+\begin{frame}{Summary of concurrent facilities in the STL}
 \begin{itemize}
-\item Concurrency: when tasks start, run, and complete in overlapping time periods
-\item Parallelism: when two or more tasks execute simultaneously
-\item How do we get there? Start a new thread for each task?
-\item Lets try to design a task system...
+\item \texttt{jthread} - manage a thread (start, join, request stop)
+\item \texttt{mutex} - mutual exlusion lock
+\item \texttt{semaphore} - constrains access to a resource
+\item \texttt{barrier}/\texttt{latch} - synchronize a team of threads
+\item \texttt{promise} + \texttt{future} - synchronize work between a producer and consumer
+\item \texttt{condition\_variable} - wait until a condition is met
+\item \texttt{atomic} - fine-grained atomic operations
 \end{itemize}
+\end{frame}
+
+\begin{frame}{Amdahl's law}
+Given work which has available parallelism $p$ and $n$ workers, the highest speedup we can achieve is
+\begin{equation*}
+S(p,n)=\frac{1}{\left(1 - p\right) + \frac{p}{n}}
+\end{equation*}
+
+\begin{center}
+\includegraphics[width=.8\textwidth, trim = {1cm, .25cm, 1cm, 1.25cm}, clip]{amdahl.eps}
+\end{center}
 \end{frame}
 
 \begin{frame}{Multithreading}
 \begin{center}
-\includegraphics[width=0.8\linewidth]{concurrency.jpeg}
+\includegraphics[width=\linewidth]{concurrency.jpeg}
 \end{center}
 \end{frame}
 
-\begin{frame}{Task Queue}
-\begin{itemize}
-\item Task = Callable + Arguments
-\item Task queue stores tasks and executes them in FIFO order on a thread pool
-\item API:
-\begin{itemize}
-\item push(f, args...)
-\item complete()
-\end{itemize}
-\item Assume single producer for simplicity
-\item Use futures to query the completion of individual tasks (outside the scope of this talk)
-\item Performance!
-\item Let's take a look at Sean Parent's talk for some inspiration...
-\end{itemize}
+\begin{frame}{Universal scalability law}
+\begin{center}
+\includegraphics[width=\textwidth]{usl.png}
+\end{center}
+
+\tiny
+N. J. Gunther, "A Simple Capacity Model of Massively Parallel Transaction Systems," CMG National Conference, 1993
 \end{frame}
 
 \begin{frame}[standout]
-The features...
+Case study: task queue
 \end{frame}
 
-\begin{frame}{Variadic templates}
+\begin{frame}{Motivating example}
+Hashing a vector of strings
 \begin{itemize}
-\item Lets us write templates with an unspecified number of parameters
-\item Syntax: \texttt{template < typename ...T >}
-\item The above can be instantiated with any number of types (including zero)
-\item \texttt{T} is a parameter pack and must be expanded whenever used
+\item String comes in
+\item Magic happens
+\item 64 bit unsigned integer comes out
 \end{itemize}
+
+Let's take a look at the serial code...
+
+This seems easy to parallelize. What could possibly go wrong?
 \end{frame}
 
-\begin{frame}{Perfect forwarding}
-\begin{itemize}
-\item When writing a function taking arguments by lvalue or rvalue reference, you need to write 2 functions
-\item When writing a function \textit{template} taking arguments by reference, we can avoid this by using perfect forwarding
-\item Universal reference: \texttt{T\&\&}, where \texttt{T} is a function parameter
-\item Use \texttt{std::forward} to pass as lvalue (do nothing) or rvalue (move)
-\end{itemize}
-\texttt{template < typename T >}\\
-\texttt{void fun(T\&\& a) \{}\\
-\hspace{0.5cm}\texttt{bar(std::forward<T>(a));}\\
-\texttt{\}}
+\begin{frame}{Task Queue}
+Task = Callable + Arguments
+
+Task queue stores tasks and executes them in FIFO order on a thread pool
+
+Use futures to query the completion of individual tasks
+
+Performance!
+
+What are some of the ways we could implement this?
+
+\tiny\vfill
+\url{https://youtu.be/zULU6Hhp42w}
+
+\url{https://sean-parent.stlab.cc/presentations/2017-01-18-concurrency/2017-01-18-concurrency.pdf}
 \end{frame}
 
-\begin{frame}{\texttt{std::function}}
-\begin{itemize}
-\item Type-erased function wrapper
-\item Template syntax: \texttt{std::function<R(Args...)>}
-\item Wraps arbitrary function object which takes arguments of types \texttt{Args...} and returns \texttt{R}
-\item API: docs
-\end{itemize}
+\begin{frame}[standout]
+The features
 \end{frame}
 
-\begin{frame}{Atomic operations}
-\begin{itemize}
-\item Special \textit{hardware} instructions
-\item Guarantee no intermediate state is visible
-\item Details are very complicated (google memory order if you're curious)
-\item Simplified, high-level view: an atomic type is magically thread safe
-\item STL: for integral types, \texttt{std::atomic<T>} behaves like \texttt{T}, but can be modified simultaneously by different threads (this is all we need to know to understand the accompanying demo)
-\end{itemize}
+\begin{frame}[fragile]{Variadic templates}
+We can write templates with an unspecified number of parameters
+
+Syntax: \texttt{template <typename ... T>}
+
+The above can be instantiated with any number of types (including zero)
+
+\texttt{T} is a parameter pack and must be expanded whenever used
+
+\scriptsize
+\vspace{.5cm}
+\begin{minted}{cpp}
+template <typename F, typename ...Args>
+auto invoke(F f, Args... args) {
+  return f(args...);
+}
+\end{minted}
 \end{frame}
 
-\begin{frame}{\texttt{std::condition\_variable}}
-\begin{itemize}
-\item Synchronization primitive which allows a thread to sleep until a condition is satisfied
-\item Sleeping threads don't take up CPU time
-\item \texttt{wait} to go to sleep
-\item \texttt{notify\_one} or \texttt{notify\_all} to wake up threads waiting on a condition variable
-\item API: docs
-\end{itemize}
+\begin{frame}[fragile]{Universal reference, Perfect forwarding}
+When writing a function taking arguments by lvalue or rvalue reference, you need to write 2 functions
+
+When writing a function \textit{template} taking arguments by reference, we can avoid this by using universal references
+
+Universal reference: \texttt{T\&\&}, where \texttt{T} is a function parameter
+
+Use \texttt{std::forward} to pass as lvalue (do nothing) or rvalue (move)
+
+\scriptsize
+\vspace{.5cm}
+\begin{minted}{cpp}
+template <typename F, typename ...Args>
+auto invoke(F&& f, Args&&... args) {
+  return f(std::forward<Args>(args)...);
+}
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{\texttt{std::[move\_only\_]function}}
+Type-erased function wrapper
+
+Template syntax: \texttt{std::function<R(Args...)>}
+
+Wraps arbitrary function object which takes arguments of types \texttt{Args...} and returns \texttt{R}
+
+\scriptsize
+\vspace{.5cm}
+\begin{minted}{cpp}
+using fun_t = std::function<double(double)>;
+
+fun_t times5{[a = 5.](double arg) {
+  return a * arg;
+}};
+
+double foo(double) { /* ... */ }
+fun_t wrapped_foo{foo};
+\end{minted}
+\end{frame}
+
+\begin{frame}[fragile]{\texttt{std::bind[\_front/\_back]}}
+Packages a callable along with some number of arguments
+
+``\texttt{std::function} with some arguments already included''
+
+\scriptsize
+\vspace{.5cm}
+\begin{minted}{cpp}
+double minus(double a, double b) { return a - b; }
+// ...
+const auto ten_minus = std::bind_front(minus, 10);
+std::cout << ten_minus(3) << '\n';
+\end{minted}
+
+\vspace{.25cm}
+\hrulefill
+
+\texttt{7}
+\end{frame}
+
+\begin{frame}{\texttt{std::mutex}}
+In concurrent programming, we often need to execute some sequence of operations while ensuring that some shared state is not accessed from another thread
+
+Such a sequence of operations is called a critical section
+
+We can use a mutex to protect a critical section
+
+To exclude other threads we \textbf{lock} the mutex, once we're done we \textbf{unlock} it
+
+Always use a RAII wrapper: e.g. \texttt{std::lock\_guard}, \texttt{std::unique\_lock}, \texttt{std::scope\_guard}
+\end{frame}
+
+\begin{frame}[fragile]{\texttt{std::mutex}}
+\scriptsize
+\inputminted{cpp}{../code/examples/example03.cpp}
+
+\vspace{.25cm}
+\hrulefill
+
+\texttt{2}
+\end{frame}
+
+\begin{frame}{\texttt{std::future}}
+Used to communicate work done asynchronously
+
+\texttt{get} waits for completion and returns the result
+
+\scriptsize
+\vspace{.25cm}
+\inputminted{cpp}{../code/examples/example04.cpp}
+
+\vspace{.25cm}
+\hrulefill
+
+\texttt{42}
+\end{frame}
+
+\begin{frame}{\texttt{std::condition\_variable[\_any]}}
+Synchronization primitive which allows a thread to sleep until a condition is satisfied
+
+Sleeping threads don't take up CPU time
+
+\texttt{wait} to go to sleep
+
+\texttt{notify\_one} or \texttt{notify\_all} to wake up threads waiting on a condition variable
+\end{frame}
+
+
+\begin{frame}[fragile]{\texttt{std::condition\_variable[\_any]}}
+\tiny
+\inputminted{cpp}{../code/examples/example05.cpp}
+\end{frame}
+
+\begin{frame}[standout]
+Results \& conclusions
+\end{frame}
+
+\begin{frame}{Results summary, 4x nehalem}
+\begin{center}
+\hspace{-0.65cm}
+\includegraphics[width=1.05\textwidth, trim = {.25cm, 0cm, .6cm, 0cm}, clip]{nehalem_4cores_results.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Results summary, 8x skylake}
+\begin{center}
+\hspace{-0.65cm}
+\includegraphics[width=1.05\textwidth, trim = {.25cm, 0cm, .6cm, 0cm}, clip]{skylake_8cores_results.png}
+\end{center}
 \end{frame}
 
 \begin{frame}{Summary}
@@ -272,7 +447,7 @@ The features...
 \setlength\itemsep{.5em}
 \item Multithreading is \underline{hard}
 \item Manually managing threads is usually a bad idea
-\item The STL has some great concurrency primitives: mutex, atomic, condition variable, semaphore, barrier...
+\item The STL has some very useful concurrency primitives
 \item Generic programming is a great tool, which yields powerful abstractions
 \item Balance your load
 \end{itemize}
@@ -283,14 +458,17 @@ The features...
 \begin{itemize}
 \setlength\itemsep{1em}
 \item[\rightarrow] Don't assume anything about performance that you haven't measured
-\item[\rightarrow] Rely on trusted libraries
+\item[\rightarrow] Rely on established, optimized libraries
 \item[\rightarrow] C++ is old, but it's evolving rapidly, and you just can't beat the performance!
 \end{itemize}
 \end{frame}
 
 \appendix
-\begin{frame}{Q\&A}
-\LARGE
-Thanks for listening
+\begin{frame}{Thanks for listening}
+\Large
+If you'd like to learn more about optimizing software performance (among other things), sign up for our ``Intro to HPC'' course next semester!
+
+\vfill
+Questions?
 \end{frame}
 \end{document}
